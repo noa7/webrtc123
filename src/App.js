@@ -3,7 +3,7 @@ import './App.css';
 import React, { useRef, useEffect } from 'react';
 import io from  'socket.io-client'
 
-const socket=io('https://c726-2a02-8109-aa10-4300-d4e-abdf-832a-897d.ngrok-free.app/remote-ctrl');
+const socket=io('https://1245-2a02-8109-aa10-4300-d4e-abdf-832a-897d.ngrok-free.app/remote-ctrl');
 
 function App() {
 console.log('hi from App.js')

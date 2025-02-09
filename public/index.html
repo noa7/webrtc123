@@ -74,6 +74,9 @@
       };
     
       function sendEventData(wParam, lParam) {
+
+        if(window.electronAPI){console.log("sendEventData.....RETURN"); return;}
+        console.log("sendEventData.....");
     const videoElement = document.getElementById("remote-video");
 
     if (websocket.readyState === WebSocket.OPEN) {
@@ -83,9 +86,10 @@
         height: videoElement ? videoElement.offsetHeight : 0,
         width: videoElement ? videoElement.offsetWidth : 0
       });
-   //   websocket.send(message);
+     websocket.send(message);
+     console.log("sendEventData.....to socket..")
     } else {
-    //  console.warn("WebSocket is not open. Unable to send message.");
+      console.warn("WebSocket is not open. Unable to send message.");
     }
   };
       // Mouse event handlers
@@ -101,6 +105,7 @@
       }
     
       function handleMouseEvent(event, wParam) {
+
         const rect = remoteVideo.getBoundingClientRect();
         const lParam = {
           pt: { x: event.clientX - rect.left, y: event.clientY - rect.top },
@@ -179,73 +184,7 @@
         'Backquote', 'Minus', 'Equal', 'BracketLeft', 'BracketRight', 'Backslash', 'Semicolon', 'Quote', 'Comma', 'Period', 'Slash'
       ];
     </script>
-  <script>
-    // Initialize WebSocket connection with renamed variables
-    const wsUri_Size = "ws://127.0.0.1:7080/";
-    const webSocket_Size = new WebSocket(wsUri_Size);
-  
-    webSocket_Size.onopen = function () {
-      console.log("WebSocket connection established.");
-  
-      // Send video element size on WebSocket open
-      sendVideoElementSize();
-    };
-  
-    webSocket_Size.onerror = function (error) {
-      console.error("WebSocket Error: ", error);
-    };
-  
-    webSocket_Size.onclose = function () {
-      console.log("WebSocket connection closed.");
-    };
-  
-    // Function to send video element's size
-    function sendVideoElementSize() {
-      const videoElement = document.getElementById("remote-video");
-  
-      if (videoElement) {
-        const width = videoElement.offsetWidth;
-        const height = videoElement.offsetHeight;
-  
-        const message = JSON.stringify({
-          width,
-          height
-        });
-  
-        if (webSocket_Size.readyState === WebSocket.OPEN) {
-     //     webSocket_Size.send(message);
-          console.log(`Sent video element size: width=${width}, height=${height}`);
-        }
-      } else {
-        console.error("Video element not found.");
-      }
-    }
-  
-    // Add event listener for window load
-    window.addEventListener("load", () => {
-      console.log("Window loaded.");
-      sendVideoElementSize();
-    });
-  
-    // Resize handling
-    let resizeTimeout;
-    window.addEventListener("resize", () => {
-      clearTimeout(resizeTimeout);
-  
-      // Delay to prevent sending too many messages during continuous resize events
-      resizeTimeout = setTimeout(() => {
-        sendVideoElementSize();
-      }, 100);  // Adjust delay as needed
-    });
-  
-    // Also handle video element resize if it might change independently
-    const videoElement = document.getElementById("remote-video");
-    if (videoElement) {
-      new ResizeObserver(() => {
-        sendVideoElementSize();
-      }).observe(videoElement);
-    }
-  </script>
+ 
   
 
   </body>

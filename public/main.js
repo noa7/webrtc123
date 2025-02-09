@@ -177,7 +177,7 @@ app.on('ready', () => {
         }
     });
 
-    mainWindow.loadURL('https://c726-2a02-8109-aa10-4300-d4e-abdf-832a-897d.ngrok-free.app');
+    mainWindow.loadURL('https://1245-2a02-8109-aa10-4300-d4e-abdf-832a-897d.ngrok-free.app');
 
     mainWindow.once('ready-to-show',()=>
         {
