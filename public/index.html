@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+   <noscript>You need to enable JavaScript to run this app.</noscript> 
+   
+    <div>
+    <video id="remote-video" autoplay></video>
+  </div>
+
+    
+    
+    <!--    <div id="root"></div>
+    
+    <div>
+        
+      
+      
+      </div>
+-->
+
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+
+    <script>
+      // Initialize WebSocket connection
+      const wsUri = "ws://127.0.0.1:7080/";
+      const websocket = new WebSocket(wsUri);
+    
+      websocket.onopen = function () {
+        console.log("WebSocket connection established.");
+      };
+    
+      websocket.onerror = function (error) {
+        console.error("WebSocket Error: ", error);
+      };
+    
+      websocket.onclose = function () {
+        console.log("WebSocket connection closed.");
+      };
+    
+      function sendEventData(wParam, lParam) {
+    const videoElement = document.getElementById("remote-video");
+
+    if (websocket.readyState === WebSocket.OPEN) {
+      const message = JSON.stringify({
+        wParam,
+        lParam,
+        height: videoElement ? videoElement.offsetHeight : 0,
+        width: videoElement ? videoElement.offsetWidth : 0
+      });
+   //   websocket.send(message);
+    } else {
+    //  console.warn("WebSocket is not open. Unable to send message.");
+    }
+  };
+      // Mouse event handlers
+      const remoteVideo = document.getElementById("remote-video");
+    
+      if (remoteVideo) {
+        remoteVideo.addEventListener("mousemove", (event) => handleMouseEvent(event, "WM_MOUSEMOVE"));
+        remoteVideo.addEventListener("mousedown", handleMouseDown);
+        remoteVideo.addEventListener("mouseup", handleMouseUp);
+        remoteVideo.addEventListener("wheel", handleMouseWheel);
+      } else {
+        console.error("Could not find the 'remote-video' element.");
+      }
+    
+      function handleMouseEvent(event, wParam) {
+        const rect = remoteVideo.getBoundingClientRect();
+        const lParam = {
+          pt: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+          mouseData: 0,
+          flags: 0,
+          time: Date.now(),
+          dwExtraInfo: null
+        };
+        sendEventData(wParam, lParam);
+      }
+    
+      function handleMouseDown(event) {
+        const wParam = getMouseButtonEvent(event, "DOWN");
+        handleMouseEvent(event, wParam);
+      }
+    
+      function handleMouseUp(event) {
+        const wParam = getMouseButtonEvent(event, "UP");
+        handleMouseEvent(event, wParam);
+      }
+    
+      function handleMouseWheel(event) {
+        const wParam = "WM_MOUSEWHEEL";
+        const lParam = {
+          pt: { x: event.clientX, y: event.clientY },
+          mouseData: event.deltaY,
+          flags: 0,
+          time: Date.now(),
+          dwExtraInfo: null
+        };
+        sendEventData(wParam, lParam);
+      }
+    
+      function getMouseButtonEvent(event, action) {
+        switch (event.button) {
+          case 0: return action === "DOWN" ? "WM_LBUTTONDOWN" : "WM_LBUTTONUP";
+          case 1: return action === "DOWN" ? "WM_MBUTTONDOWN" : "WM_MBUTTONUP";
+          case 2: return action === "DOWN" ? "WM_RBUTTONDOWN" : "WM_RBUTTONUP";
+          default: return action === "DOWN" ? "WM_XBUTTONDOWN" : "WM_XBUTTONUP";
+        }
+      }
+    
+      // Keyboard event handlers
+      window.addEventListener("keydown", (event) => handleKeyboardEvent(event, "WM_KEYDOWN"));
+      window.addEventListener("keyup", (event) => handleKeyboardEvent(event, "WM_KEYUP"));
+    
+      function handleKeyboardEvent(event, wParam) {
+        const lParam = {
+          vkCode: event.code,
+          scanCode: event.keyCode,
+          flags: getKeyEventFlags(event),
+          time: Date.now(),
+          dwExtraInfo: null
+        };
+        sendEventData(wParam, lParam);
+      }
+    
+      function getKeyEventFlags(event) {
+        let flags = 0;
+        if (event.altKey) flags |= 0x01; // Example flag for Alt key, adjust flags as needed
+        if (event.ctrlKey) flags |= 0x02; // Example flag for Ctrl key
+        return flags;
+      }
+    
+      // Standard keys list (for documentation or further use)
+      const standardKeys = [
+        'KeyA', 'KeyB', 'KeyC', 'KeyD', 'KeyE', 'KeyF', 'KeyG', 'KeyH', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyM', 'KeyN',
+        'KeyO', 'KeyP', 'KeyQ', 'KeyR', 'KeyS', 'KeyT', 'KeyU', 'KeyV', 'KeyW', 'KeyX', 'KeyY', 'KeyZ',
+        'Digit0', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9',
+        'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+        'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'CapsLock',
+        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown',
+        'Insert', 'Delete', 'Backspace', 'Enter', 'Escape', 'Tab', 'Space',
+        'Numpad0', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5', 'Numpad6', 'Numpad7', 'Numpad8', 'Numpad9',
+        'NumpadAdd', 'NumpadSubtract', 'NumpadMultiply', 'NumpadDivide', 'NumpadDecimal', 'NumpadEnter',
+        'Backquote', 'Minus', 'Equal', 'BracketLeft', 'BracketRight', 'Backslash', 'Semicolon', 'Quote', 'Comma', 'Period', 'Slash'
+      ];
+    </script>
+  <script>
+    // Initialize WebSocket connection with renamed variables
+    const wsUri_Size = "ws://127.0.0.1:7080/";
+    const webSocket_Size = new WebSocket(wsUri_Size);
+  
+    webSocket_Size.onopen = function () {
+      console.log("WebSocket connection established.");
+  
+      // Send video element size on WebSocket open
+      sendVideoElementSize();
+    };
+  
+    webSocket_Size.onerror = function (error) {
+      console.error("WebSocket Error: ", error);
+    };
+  
+    webSocket_Size.onclose = function () {
+      console.log("WebSocket connection closed.");
+    };
+  
+    // Function to send video element's size
+    function sendVideoElementSize() {
+      const videoElement = document.getElementById("remote-video");
+  
+      if (videoElement) {
+        const width = videoElement.offsetWidth;
+        const height = videoElement.offsetHeight;
+  
+        const message = JSON.stringify({
+          width,
+          height
+        });
+  
+        if (webSocket_Size.readyState === WebSocket.OPEN) {
+     //     webSocket_Size.send(message);
+          console.log(`Sent video element size: width=${width}, height=${height}`);
+        }
+      } else {
+        console.error("Video element not found.");
+      }
+    }
+  
+    // Add event listener for window load
+    window.addEventListener("load", () => {
+      console.log("Window loaded.");
+      sendVideoElementSize();
+    });
+  
+    // Resize handling
+    let resizeTimeout;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimeout);
+  
+      // Delay to prevent sending too many messages during continuous resize events
+      resizeTimeout = setTimeout(() => {
+        sendVideoElementSize();
+      }, 100);  // Adjust delay as needed
+    });
+  
+    // Also handle video element resize if it might change independently
+    const videoElement = document.getElementById("remote-video");
+    if (videoElement) {
+      new ResizeObserver(() => {
+        sendVideoElementSize();
+      }).observe(videoElement);
+    }
+  </script>
+  
+
+  </body>
+</html>
