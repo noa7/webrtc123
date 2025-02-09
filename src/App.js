@@ -3,7 +3,7 @@ import './App.css';
 import React, { useRef, useEffect } from 'react';
 import io from  'socket.io-client'
 
-const socket=io('https://1245-2a02-8109-aa10-4300-d4e-abdf-832a-897d.ngrok-free.app/remote-ctrl');
+const socket=io('https://fad1-2a02-8109-aa10-4300-d4e-abdf-832a-897d.ngrok-free.app/remote-ctrl');
 
 function App() {
 console.log('hi from App.js')
@@ -197,32 +197,7 @@ const getStream=async(screenId)=>
 
 
   
-/*
-  function sendVideoDimensions() {
-    const videoElement = document.getElementById('remote-video');
-    const width = videoElement.offsetWidth;
-    const height = videoElement.offsetHeight;
 
-    console.log(`Sending video dimensions: ${width}px x ${height}px`);
-
-    // Emit the dimensions to the server
-    socket.emit('video-dimensions', { width, height });
-}
-*/
-// Send dimensions when the window is loaded and resized
-//window.addEventListener('load', sendVideoDimensions);
-//window.addEventListener('resize', sendVideoDimensions);
-
-
-  
-
-    // getStream('hello');
-   // getScreenStream();
-    /*
-  window.electronAPI.getScreenId((customEvent, screenId) => {
-    console.log('appjs screenId:', screenId);
-    getStream(screenId);
-});*/
 
 return null;
 
