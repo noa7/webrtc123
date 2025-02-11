@@ -177,7 +177,7 @@ app.on('ready', () => {
         }
     });
 
-    mainWindow.loadURL('https://da2e-20-162-22-50.ngrok-free.app');
+    mainWindow.loadURL('https://bffa-2a02-8109-aa10-4300-a121-295c-7213-4f5b.ngrok-free.app');
 
     mainWindow.once('ready-to-show',()=>
         {

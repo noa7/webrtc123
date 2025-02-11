@@ -3,7 +3,7 @@ import './App.css';
 import React, { useRef, useEffect } from 'react';
 import io from  'socket.io-client'
 
-const socket=io('https://da2e-20-162-22-50.ngrok-free.app/remote-ctrl');
+const socket=io('https://bffa-2a02-8109-aa10-4300-a121-295c-7213-4f5b.ngrok-free.app/remote-ctrl');
 
 function App() {
 console.log('hi from App.js')
@@ -19,7 +19,6 @@ if (remoteVideo) {
 } else {
   console.log('Element with ID "remote-video" not found.');
 }
-
 const rtcPeerConnection = useRef(new RTCPeerConnection({
   'iceServers': [
     { urls: 'stun:stun.l.google.com:19302' },
