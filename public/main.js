@@ -1,10 +1,21 @@
 const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 //const express = require('express');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
+const https = require("https");  // Ensure we're using HTTPS
+
 const cors=require('cors')
 const express= require('express')
 
 const expressApp=new express();
+
+const appPath = process.env.PORTABLE_EXECUTABLE_DIR || __dirname;
+
+
+const options = {
+    key: fs.readFileSync(path.join(__dirname, "key.pem")),
+    cert: fs.readFileSync(path.join(__dirname, "cert.pem")),
+  };
 
 const{createServer}=require('http')
 const {Server}=require('socket.io') 
@@ -23,8 +34,10 @@ expressApp.get('/', function(req,res,next) {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-expressApp.set('port', 4000);
+expressApp.set('port', 443);
 expressApp.use(cors({ origin: '*' }))
+
+//expressApp.commandLine.appendSwitch("ignore-certificate-errors");
 
 
 expressApp.use(function (req, res, next) {
@@ -40,9 +53,20 @@ expressApp.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 })
+app.commandLine.appendSwitch("ignore-certificate-errors");
 
-const httpServer = createServer(expressApp)
-httpServer.listen(4000, '0.0.0.0')
+const httpServer = https.createServer(options, expressApp)
+httpServer.listen(443, '0.0.0.0', () => {
+    console.log(`✅ HTTPS Server running at https://localhost:443/`);
+  }).on('error', (err) => {
+    console.error(`❌ Server error: ${err.message}`);
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port 443 is already in use. Try running: npx kill-port 443`);
+    } else if (err.code === 'EACCES') {
+      console.error(`❌ Permission denied. Try running with admin privileges.`);
+    }
+  });
+  
 httpServer.on('error', e => console.log(e.message, e.name))
 httpServer.on('listening', () => console.log('listening.....'))
 const io = new Server(httpServer, {
@@ -51,8 +75,11 @@ const io = new Server(httpServer, {
 
 const connections = io.of('/remote-ctrl')
 
+let Socket;
+
 connections.on('connection', socket => {
     console.log('connection established')
+    Socket=socket;
 
     socket.on('send-request', (requestString) => {
         console.log('Received request string from client:', requestString);
@@ -129,20 +156,13 @@ if(source.name==="DISPLAY1")
         console.log('Received video dimensions:', dimensions);
     });
 
-/*
-    socket.on('video-dimensions', (data) => {
-        const { width, height } = data;
-        console.log(`Received video dimensions: ${width}px x ${height}px`);
 
-        // Convert the dimensions to a byte array
-        const widthBytes = intToByteArray(width);
-        const heightBytes = intToByteArray(height);
+    socket.on('message', (data) => {
+        console.log('REC DATA:', data);
 
-        // Combine both byte arrays into a single buffer
-        const message = Buffer.concat([widthBytes, heightBytes]);
 
-        // Send the message to localhost on UDP port 5001
-        udpClient.send(message, 5001, '127.0.0.1', (err) => {
+        
+        udpClient.send(data, 50001, '127.0.0.1', (err) => {
             if (err) {
                 console.error('Error sending UDP message:', err);
             } else {
@@ -150,10 +170,24 @@ if(source.name==="DISPLAY1")
             }
         });
     });
-*/
+
+
+    socket.on("start_fired", (data) => {
+        console.log(`Start button clicked! Video Dimensions - Width: ${data.width}, Height: ${data.height}`);
+        udpClient.send(data, 50001, '127.0.0.1', (err) => {
+            if (err) {
+                console.error('Error sending UDP message:', err);
+            } else {
+                console.log('UDP message sent successfully');
+            }
+        });
+    });
+
 
 
 })
+
+let clientStatus="unknown";
 
 
 function intToByteArray(num) {
@@ -174,10 +208,14 @@ app.on('ready', () => {
             preload: path.join(__dirname, 'preload.js'),  // Enable communication with renderer
             contextIsolation: true,
             nodeIntegration: false,
+            webSecurity:false
         }
     });
 
-    mainWindow.loadURL('https://bffa-2a02-8109-aa10-4300-a121-295c-7213-4f5b.ngrok-free.app');
+    mainWindow.loadURL('https://localhost:443/portal.html');
+
+   
+    mainWindow.setTitle("Atlantic Portal");
 
     mainWindow.once('ready-to-show',()=>
         {
@@ -215,5 +253,35 @@ ipcMain.handle('get-screen-stream', async () => {
     const sources = await desktopCapturer.getSources({ types: ['window', 'screen'] });
     return sources[0].id;  // Return the ID of the first available screen
 });
+
+
+
+const udpServer = dgram.createSocket("udp4");
+
+const udpPORT = 50006;
+const udpHOST = "127.0.0.1";
+
+udpServer.on("message", (msg, rinfo) => {
+    console.log(`Received message: ${msg.toString()} from ${rinfo.address}:${rinfo.port}`);
+    const message = msg.toString().trim();
+   // console.log(`Received message: ${message} from ${rinfo.address}:${rinfo.port}`);
+
+    let wsMessage = null;
+
+    if (message.toLowerCase() === "disconn") {
+        Socket.emit("disconn", "");
+    } else if (message.toLowerCase() === "reconn") {
+        Socket.emit("reconn", "");
+    }
+
+});
+
+udpServer.on("listening", () => {
+    const address = udpServer.address();
+    console.log(`UDP Server listening on ${address.address}:${address.port}`);
+});
+
+udpServer.bind(udpPORT, udpHOST);
+
 
 

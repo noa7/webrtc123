@@ -9,6 +9,7 @@
     "electron": "^34.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.5",
     "react-scripts": "5.0.1",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1"
@@ -16,7 +17,7 @@
   "scripts": {
     "start": "set PORT=4000 && react-scripts start",
     "electron": "electron .",
-    "build": "react-scripts build",
+    "build": "react-scripts build && copy src\\portal.js build\\static\\js\\portal.js && copy key.pem build\\key.pem && copy cert.pem build\\cert.pem",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

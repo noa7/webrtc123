@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <title>Portal Page</title>
+</head>
+<body>
+    <h2>WebRTC Screen Sharing</h2>
+    <script>
+        // Connect to the Socket.IO server
+        const socket = io('https://localhost/remote-ctrl');
+
+        // Create RTC Peer Connection
+        const rtcPeerConnection = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        });
+
+        // ✅ Fix: Use `socket.on("connect")`
+        socket.on("connect", function () {
+            console.log("Socket.IO connected:", socket.id);
+            socket.emit("send-request", { data: "request_base_hello" }); // Use `emit` instead of `send`
+        });
+
+        socket.on("connect_error", function (error) {
+            console.error("Connection Error:", error);
+        });
+
+        socket.on("disconnect", function () {
+            console.log("Disconnected from server.");
+        });
+
+        // ✅ Fix: Use `socket.on("messageType", callback)`
+        socket.on("server-response", function (message) {
+            console.log("Server response received:", message);
+            getScreenStream(message);
+        });
+
+
+        // ✅ Handle incoming WebRTC offer
+        socket.on('offer', offerSDP => {
+        console.log('--received offer')
+        rtcPeerConnection.setRemoteDescription(
+          new RTCSessionDescription(offerSDP)
+        ).then(() => {
+          rtcPeerConnection.createAnswer().then(sdp => {
+            rtcPeerConnection.setLocalDescription(sdp)
+  
+            console.log('--sending answer')
+            socket.emit('answer', sdp)
+          })
+        })
+      })
+  
+  
+      socket.on('icecandidate', icecandidate => {
+        console.log('--on   icecandidate')
+        rtcPeerConnection.addIceCandidate(
+          new RTCIceCandidate(icecandidate)
+        )
+      })
+  
+      rtcPeerConnection.onicecandidate = (e) => {
+        console.log('--onicecandidate')
+        if (e.candidate)
+          socket.emit('icecandidate', e.candidate)
+      }
+  
+      rtcPeerConnection.oniceconnectionstatechange = (e) => {
+       console.log(rtcPeerConnection.connectionState)
+      };
+
+
+        // Capture Screen Stream
+        async function getScreenStream(sourceId) {
+        try {
+            // Get screen source ID from the main process
+          // const sourceId = await window.electronAPI.getScreenSource();
+            //console.log('Received screen source ID:', sourceId);
+      
+            // Capture the screen stream
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                    mandatory: {
+                        chromeMediaSource: 'desktop',
+                        chromeMediaSourceId: sourceId,
+                     //   maxWidth: 1920,
+                       // maxHeight: 1080,
+                       // maxFrameRate: 30
+                    }
+                },
+                cursor: "never"
+            });
+            handleStream1(stream);
+            return stream;
+        } catch (error) {
+            console.error('Error capturing screen stream:', error);
+        }
+      }
+
+      const handleStream1 = (stream) => 
+  {
+rtcPeerConnection.addStream(stream);
+console.log("Track Added");
+//    remoteVideo.srcObject = stream;
+  };
+
+
+  rtcPeerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit("icecandidate", { candidate: event.candidate });
+            }
+        };
+
+        rtcPeerConnection.oniceconnectionstatechange = () => {
+            console.log("ICE connection state:", rtcPeerConnection.iceConnectionState);
+        };
+
+    </script>
+</body>
+</html>
